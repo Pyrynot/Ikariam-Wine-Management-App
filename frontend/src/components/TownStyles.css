@@ -1,0 +1,61 @@
+/* Table styles to match the form aesthetic */
+.table-container {
+    background-color: #352e2e; /* Similar light background for consistency */
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 100%;
+    margin: 20px auto; /* Add some margin to separate tables */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Optional: adds a subtle shadow for depth */
+  }
+  
+  .table-container h3 {
+    color: #573737; /* Dark gray to match the form title color */
+    margin-bottom: 10px;
+    text-align: left;
+  }
+  
+  .table-container table {
+    width: 100%;
+    border-collapse: collapse; /* Collapse borders for a clean table look */
+    margin-bottom: 20px; /* Space between each player's table */
+  }
+  
+  .table-container th,
+  .table-container td {
+    text-align: left;
+    padding: 8px;
+    border-bottom: 1px solid #ddd; /* Light border for each row */
+  }
+  
+  .table-container th {
+    background-color: #573737; /* Dark background for headers */
+    color: white;
+    border-radius: 10px; /* Rounded corners for the header cells */
+  }
+  
+  /* Style for cells with time remaining warnings */
+  .time-warning {
+    background-color: rgb(63, 63, 50);
+  }
+  
+  .time-critical {
+    background-color: red;
+  }
+  
+  /* Optional: Alternate row coloring */
+  .table-container tr:nth-child(even) {
+    background-color: #272222;
+  }
+  
+  /* Style adjustments for responsive design */
+  @media (max-width: 768px) {
+    .table-container {
+      padding: 10px;
+    }
+  
+    .table-container th,
+    .table-container td {
+      padding: 5px; /* Smaller padding for smaller screens */
+    }
+  }
+  

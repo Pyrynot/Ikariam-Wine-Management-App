@@ -1,0 +1,68 @@
+.new-town-form {
+    background-color: #573737; /* Light gray background */
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 100%; /* Adjust as needed */
+    margin: auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between; /* Adjust spacing between fields */
+    align-items: center; /* Center fields vertically */
+  }
+  
+  .new-town-form .form-field {
+    flex-basis: 15%; /* Adjust based on preference, ensures a minimum width */
+    margin: 5px; /* Adjust spacing */
+    position: relative;
+  }
+  
+  .new-town-form label {
+    display: block;
+    margin-bottom: 2px;
+    font-size: 15px;
+    color: #000000;
+  }
+  
+  .new-town-form input[type="text"],
+  .new-town-form input[type="number"] {
+    width: 80%;
+    padding: 8px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+  }
+  
+  .new-town-form input[type="text"]:focus,
+  .new-town-form input[type="number"]:focus {
+    border-color: #007bff;
+  }
+  
+  .submit-button {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    flex-basis: 20%; /* Adjust button width */
+    max-width: 120px; /* Maximum width of button */
+    text-align: center;
+  }
+  
+  .submit-button:hover {
+    background-color: #0056b3;
+  }
+  
+  /* Additional styles to ensure responsive layout */
+  @media (max-width: 768px) {
+    .new-town-form {
+      flex-direction: column;
+    }
+  
+    .new-town-form .form-field,
+    .submit-button {
+      flex-basis: auto;
+      width: 100%;
+      max-width: none;
+    }
+  }
+  

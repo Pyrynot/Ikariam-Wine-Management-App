@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, Float, create_engine
+from sqlalchemy import Column, Integer, String, Float, create_engine, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.sql import func
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./wine_game.db"
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
@@ -16,3 +17,5 @@ class Town(Base):
     town_name = Column(String, unique=True, index=True)
     wine_storage = Column(Float)
     wine_hourly_consumption = Column(Float)
+    wine_production = Column(Float, default=0)
+    last_update = Column(DateTime(timezone=True), server_default=func.now())
