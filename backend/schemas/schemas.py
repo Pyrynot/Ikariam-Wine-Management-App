@@ -33,3 +33,11 @@ class TownUpdate(TownBase):
 
 class TownDelete(BaseModel):
     id: int
+
+class InitialData(BaseModel):
+    id: int
+    # town_id: int
+    initial_wine_storage: float
+    initial_wine_hourly_consumption: float
+    initial_wine_production: float
+    timestamp: datetime

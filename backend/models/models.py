@@ -1,6 +1,6 @@
-from sqlalchemy import Column, Integer, String, Float, create_engine, DateTime
+from sqlalchemy import Column, Integer, String, Float, create_engine, DateTime, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.sql import func
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./wine_game.db"
@@ -20,3 +20,16 @@ class Town(Base):
     wine_production = Column(Float, default=0)
     last_update = Column(DateTime(timezone=True), server_default=func.now())
     
+    initial_storage = relationship("InitialWineStorage", back_populates="town", uselist=False)
+
+class InitialWineStorage(Base):
+    __tablename__ = "initial_wine_storage"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    town_id = Column(Integer, ForeignKey('towns.id'))
+    initial_wine_storage = Column(Float)
+    initial_wine_hourly_consumption = Column(Float)
+    initial_wine_production = Column(Float)
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())
+
+    town = relationship("Town", back_populates="initial_storage")
