@@ -9,9 +9,9 @@ import pytz
 
 router = APIRouter()
 
-@router.get("/towns/", response_model=List[schemas.Town])
-def read_towns(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    towns = crud_ops.get_towns(db, skip=skip, limit=limit)
+@router.get("/towns/", response_model=List[schemas.TownDetails])
+def read_towns(db: Session = Depends(get_db)):
+    towns = crud_ops.get_towns(db)
     return towns
 
 

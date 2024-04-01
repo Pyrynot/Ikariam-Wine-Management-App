@@ -19,6 +19,9 @@ class Town(TownBase):
     class Config:
         orm_mode = True
 
+class TownDetails(Town):
+    initial_data_last_update: datetime
+
 class TownTransfer(BaseModel):
     player_name: str
     source_town_name: str
@@ -36,7 +39,6 @@ class TownDelete(BaseModel):
 
 class InitialData(BaseModel):
     id: int
-    # town_id: int
     initial_wine_storage: float
     initial_wine_hourly_consumption: float
     initial_wine_production: float

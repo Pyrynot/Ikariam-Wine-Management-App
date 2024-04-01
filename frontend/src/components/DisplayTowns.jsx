@@ -69,10 +69,19 @@ function DisplayTowns({ towns, onUpdateSuccess, fetchAndUpdateTowns }) {
     towns.forEach(town => {
       const playerName = town.player_name;
       const updateTime = new Date(town.last_update);
+      const initialDataUpdateTime = new Date(town.initial_data_last_update); // Convert to Date object
+
       if (!groups[playerName]) {
         groups[playerName] = { towns: [], lastUpdate: updateTime };
       }
-      groups[playerName].towns.push(town);
+
+
+
+      groups[playerName].towns.push({
+        ...town,
+        initial_data_last_update: initialDataUpdateTime, // Include the converted Date
+      });
+
       if (groups[playerName].lastUpdate < updateTime) {
         groups[playerName].lastUpdate = updateTime;
       }
@@ -84,14 +93,15 @@ function DisplayTowns({ towns, onUpdateSuccess, fetchAndUpdateTowns }) {
     <div className="table-container">
       {Object.entries(townsByPlayer).map(([playerName, playerData]) => (
         <div key={playerName} className="player-section">
-          <h3>{playerName}'s Towns, last updated: {playerData.lastUpdate.toLocaleString()}</h3>
+          <h3>{playerName}'s Towns, last updated: {playerData.lastUpdate.toLocaleString()} updated:</h3>
           <table>
             <thead>
               <tr>
                 <th>Town Name</th>
-                <th>Wine Storage</th>
-                <th>Wine Hourly Consumption</th>
-                <th>Wine Production</th>
+                <th>Storage</th>
+                <th>Consumption</th>
+                <th>Production</th>
+                <th>Last Updated</th>
                 <th>Time remaining</th>
                 <th>Actions</th>
               </tr>
@@ -100,12 +110,15 @@ function DisplayTowns({ towns, onUpdateSuccess, fetchAndUpdateTowns }) {
               {playerData.towns.map((town) => {
                 const timeRemaining = calculateTimeRemaining(town);
                 const rowStyle = getStyleForTimeRemaining(timeRemaining);
+                const initialUpdate = town.initial_data_last_update ? 
+                  new Date(town.initial_data_last_update).toLocaleString() : 'N/A';
                 return (
                   <tr key={town.id} style={rowStyle}>
                     <td>{town.town_name}</td>
                     <td>{town.wine_storage.toFixed(2)}</td>
                     <td>{town.wine_hourly_consumption.toFixed(2)}</td>
                     <td>{town.wine_production.toFixed(2)}</td>
+                    <td>{initialUpdate}</td>
                     <td>{timeRemaining}</td>
                     <td>
                       {editingTownId === town.id ? (

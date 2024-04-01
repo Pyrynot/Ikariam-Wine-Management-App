@@ -6,8 +6,29 @@ import pytz
 import logging
 from services import town_services as ts
 
-def get_towns(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Town).offset(skip).limit(limit).all()
+#def get_towns(db: Session, skip: int = 0, limit: int = 100):
+    #return db.query(models.Town).offset(skip).limit(limit).all()
+
+def get_towns(db: Session):
+    towns_with_initial_data = (
+        db.query(models.Town, models.InitialWineStorage.timestamp.label("initial_data_last_update"))
+        .join(models.InitialWineStorage, models.Town.id == models.InitialWineStorage.town_id)
+        .all()
+    )
+    
+    # Transform the data into a list of dictionaries including all town fields plus the initial data last updated
+    towns_list = [{
+        "id": town.id,
+        "player_name": town.player_name,
+        "town_name": town.town_name,
+        "wine_storage": town.wine_storage,
+        "wine_hourly_consumption": town.wine_hourly_consumption,
+        "wine_production": town.wine_production,
+        "last_update": town.last_update,
+        "initial_data_last_update": initial_data_last_updated
+    } for town, initial_data_last_updated in towns_with_initial_data]
+    
+    return towns_list
 
 def get_towns_initial(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.InitialWineStorage).offset(skip).limit(limit).all()
