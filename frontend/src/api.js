@@ -49,6 +49,22 @@ export function addTown(playerName, townName, wineStorage, wineHourlyConsumption
   }
   
 
-export function forceUpdateWineLevels() {
-  return makeFetchRequest(`${BACKEND_URL}/force-update/`);
+export function updateTown(townId, data) {
+  return makeFetchRequest(`${BACKEND_URL}/towns/${townId}/`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data)
+  });
+}
+
+export function deleteTown(townId) {
+  return makeFetchRequest(`${BACKEND_URL}/towns/${townId}/`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    // No body is needed for a DELETE request
+  });
 }

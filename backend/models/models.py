@@ -14,8 +14,9 @@ class Town(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     player_name = Column(String, index=True)
-    town_name = Column(String, unique=True, index=True)
+    town_name = Column(String, index=True)
     wine_storage = Column(Float)
     wine_hourly_consumption = Column(Float)
     wine_production = Column(Float, default=0)
     last_update = Column(DateTime(timezone=True), server_default=func.now())
+    

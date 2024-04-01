@@ -2,6 +2,8 @@ from sqlalchemy.orm import Session
 from models import models
 from schemas import schemas
 import datetime
+import pytz
+import logging
 
 def get_town(db: Session, town_id: int):
     return db.query(models.Town).filter(models.Town.id == town_id).first()
@@ -19,32 +21,37 @@ def create_town(db: Session, town: schemas.TownCreate):
     db.refresh(db_town)
     return db_town
 
-def update_town(db: Session, town_id: int, updates: schemas.TownCreate):
+def update_town(db: Session, town_id: int, town_update: schemas.TownUpdate):
     db_town = get_town(db, town_id)
     if db_town:
-        update_data = updates.dict(exclude_unset=True)
+        update_data = town_update.dict(exclude_unset=True)
         for key, value in update_data.items():
             setattr(db_town, key, value)
         db.commit()
         db.refresh(db_town)
-    return db_town
+        return db_town
+    else:
+        raise ValueError(f"Town with id {town_id} does not exist")
 
 def delete_town(db: Session, town_id: int):
     db_town = get_town(db, town_id)
     if db_town:
         db.delete(db_town)
         db.commit()
-    return db_town
+        return db_town
+    else:
+        raise ValueError(f"Town with id {town_id} does not exist")
 
 def update_wine_levels(db: Session):
     towns = db.query(models.Town).all()
-    now = datetime.datetime.now()
+    local_tz = pytz.timezone('Europe/Helsinki')  # Adjust to your specific timezone
+    now = datetime.datetime.now(local_tz)
     for town in towns:
-        for town in towns:
-            elapsed_time = (now - town.last_update).total_seconds() / 3600  # Hours since last update
-            wine_change = (town.wine_production - town.wine_hourly_consumption) * elapsed_time
-            town.wine_storage = max(town.wine_storage + wine_change, 0)  # Update with production/consumption
-            town.last_update = now
+        elapsed_time = (now - town.last_update).total_seconds() / 3600  # Hours since last update
+        wine_change = (town.wine_production - town.wine_hourly_consumption) * elapsed_time
+        logging.info(f"Player name {town.player_name}. Town name {town.town_name}. Town ID {town.id}: Wine storage updated. {abs(wine_change)} wine units {'removed' if wine_change < 0 else 'added'}.")
+        town.wine_storage = max(town.wine_storage + wine_change, 0)  # Update with production/consumption
+        town.last_update = now
     db.commit()
 
 def transfer_wine_between_towns(db: Session, transfer_request: schemas.TownTransfer) -> bool:

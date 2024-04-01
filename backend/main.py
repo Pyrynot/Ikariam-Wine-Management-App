@@ -9,6 +9,11 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
+import datetime
+import pytz
+import logging
+
+logging.basicConfig(filename='wine_updates.log', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -21,7 +26,7 @@ def start_scheduler():
     # or you ensure the DB session is handled correctly for async use
     scheduler.add_job(
         func=lambda: crud_ops.update_wine_levels(db=SessionLocal()),
-        trigger=CronTrigger(second=10),  # For actual use, you might want to adjust this trigger
+        trigger=CronTrigger(hour='*', minute=0, second=0),  # For actual use, you might want to adjust this trigger
     )
     scheduler.start()
 
@@ -50,11 +55,26 @@ def read_towns(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
 
 @app.post("/towns/", response_model=schemas.Town)
 def create_town(town: schemas.TownCreate, db: Session = Depends(get_db)):
-    print(town.model_dump())
-    db_town = crud_ops.get_town_by_name(db, town_name=town.town_name)
-    if db_town:
-        raise HTTPException(status_code=400, detail="Town already registered")
-    return crud_ops.create_town(db=db, town=town)
+
+    local_tz = pytz.timezone('Europe/Helsinki')  # Adjust to your specific timezone
+    now = datetime.datetime.now(local_tz)
+    start_of_hour = now.replace(minute=0, second=0, microsecond=0)
+
+    # Create a new town with last_update set to the start of the hour
+    db_town = models.Town(
+        player_name=town.player_name,
+        town_name=town.town_name,
+        wine_storage=town.wine_storage,
+        wine_hourly_consumption=town.wine_hourly_consumption,
+        wine_production=town.wine_production,
+        last_update=start_of_hour  # Manually set last_update
+    )
+
+    db.add(db_town)
+    db.commit()
+    db.refresh(db_town)
+
+    return db_town
 
 @app.post("/towns/transfer/")
 def transfer_wine(transfer_request: schemas.TownTransfer, db: Session = Depends(get_db)):
@@ -68,3 +88,19 @@ def transfer_wine(transfer_request: schemas.TownTransfer, db: Session = Depends(
 def force_update_wine_levels(db: Session = Depends(get_db)):
     crud_ops.update_wine_levels(db)
     return {"message": "Wine levels updated"}
+
+@app.put("/towns/{town_id}/", response_model=schemas.Town)
+def update_town(town_id: int, town_update: schemas.TownUpdate, db: Session = Depends(get_db)):
+    # Update the town in the database using CRUD operations
+    updated_town = crud_ops.update_town(db, town_id=town_id, town_update=town_update)
+    if not updated_town:
+        raise HTTPException(status_code=404, detail="Town not found")
+    return updated_town
+
+@app.delete("/towns/{town_id}/")
+def delete_town(town_id: int, db: Session = Depends(get_db)):
+    # Delete the town from the database
+    result = crud_ops.delete_town(db, town_id=town_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Town not found")
+    return {"message": "Town deleted successfully"}

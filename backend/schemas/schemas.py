@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
+from typing import Optional
 
 class TownBase(BaseModel):
     player_name: str
@@ -23,3 +24,12 @@ class TownTransfer(BaseModel):
     source_town_name: str
     destination_town_name: str
     wine_amount: float
+
+class TownUpdate(TownBase):
+    wine_storage: Optional[float] = None
+    wine_hourly_consumption: Optional[float] = None
+    wine_production: Optional[float] = None
+    # The Optional field allows for partial updates; fields can be omitted in the PATCH request.
+
+class TownDelete(BaseModel):
+    id: int

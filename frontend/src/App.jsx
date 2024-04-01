@@ -52,7 +52,7 @@ function App() {
       {/* ...other components */}
       <NewTownForm onNewTownAdded={fetchAndUpdateTowns}/>
       <TransferWineForm playerName={playerName} towns={towns} onTransferSuccess={fetchAndUpdateTowns} />
-      <DisplayTowns towns={towns} /> {/* Add DisplayTowns component here */}
+      <DisplayTowns towns={towns} fetchAndUpdateTowns={fetchAndUpdateTowns}/> {/* Add DisplayTowns component here */}
     </div>
   );
 }
