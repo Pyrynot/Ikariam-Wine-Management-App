@@ -87,3 +87,47 @@ def transfer_wine_between_towns(db: Session, transfer_request: schemas.TownTrans
     db.commit()
     return True
 
+def adjust_wine_production(db: Session, town_id: int, new_storage_input: float):
+    """
+    Adjusts the wine production float value based on actual wine storage input by the user.
+    
+    Parameters:
+    - db: Database session.
+    - town_id: ID of the town being updated.
+    - new_storage_input: The new wine storage value input by the user.
+    """
+    # Fetch the relevant town and its initial storage data
+    town = db.query(models.Town).filter(models.Town.id == town_id).first()
+    if not town:
+        return "Town not found", False
+    
+    # Calculate the expected wine storage based on the last update
+    local_tz = pytz.timezone('Europe/Helsinki')
+    now = datetime.datetime.now(local_tz)
+    if town.last_update.tzinfo is None:
+        town_last_update_aware = local_tz.localize(town.last_update)
+    else:
+        town_last_update_aware = town.last_update.astimezone(local_tz)
+    elapsed_hours = (now - town_last_update_aware).total_seconds() / 3600
+    
+    expected_storage = town.wine_storage + (town.wine_production - town.wine_hourly_consumption) * elapsed_hours
+    
+    # Calculate the difference between expected and actual storage to adjust production
+    storage_difference = new_storage_input - expected_storage
+    
+    # Assuming the difference is due to production rate inaccuracies,
+    # calculate the new production rate needed to match the actual storage input.
+    # This simplistic model could be refined to account for consumption changes or other factors.
+    if elapsed_hours > 0:
+        adjusted_production_rate = town.wine_production + (storage_difference / elapsed_hours)
+        town.wine_production = adjusted_production_rate
+        
+    # Update the town's wine storage to the new input value
+    town.wine_storage = new_storage_input
+    
+    # Update the last update timestamp
+    town.last_update = now
+    
+    db.commit()
+    return "Wine production adjusted successfully", True
+
