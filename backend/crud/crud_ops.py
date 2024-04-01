@@ -47,11 +47,28 @@ def update_wine_levels(db: Session):
     local_tz = pytz.timezone('Europe/Helsinki')  # Adjust to your specific timezone
     now = datetime.datetime.now(local_tz)
     for town in towns:
-        elapsed_time = (now - town.last_update).total_seconds() / 3600  # Hours since last update
-        wine_change = (town.wine_production - town.wine_hourly_consumption) * elapsed_time
-        logging.info(f"Player name {town.player_name}. Town name {town.town_name}. Town ID {town.id}: Wine storage updated. {abs(wine_change)} wine units {'removed' if wine_change < 0 else 'added'}.")
-        town.wine_storage = max(town.wine_storage + wine_change, 0)  # Update with production/consumption
-        town.last_update = now
+        # Ensure town.last_update is offset-aware in the same timezone
+        if town.last_update.tzinfo is None:
+            # If town.last_update is naive, make it aware using the local timezone
+            town_last_update_aware = local_tz.localize(town.last_update)
+        else:
+            # Otherwise, convert it to the local timezone
+            town_last_update_aware = town.last_update.astimezone(local_tz)
+        elapsed_time = (now - town_last_update_aware).total_seconds() / 3600
+
+        # Net wine change calculation
+        net_wine_change = (town.wine_production - town.wine_hourly_consumption) * elapsed_time
+        # Ensure that the wine storage reflects production and consumption accurately
+        town.wine_storage += net_wine_change  # Directly apply net change
+        logging.info(f"Player name {town.player_name}. Town name {town.town_name}. Town ID {town.id}: Wine storage updated. {abs(net_wine_change)} wine units {'removed' if net_wine_change < 0 else 'added'}.")
+
+        
+        # Update town.last_update to be offset-aware
+        # Ensure wine storage does not drop below zero
+        town.wine_storage = max(town.wine_storage, 0)
+
+        # Update the last_update to now (make sure it's appropriately timezoned)
+        town.last_update = now  # Convert back to UTC for consistency in storage
     db.commit()
 
 def transfer_wine_between_towns(db: Session, transfer_request: schemas.TownTransfer) -> bool:
