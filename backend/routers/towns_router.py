@@ -4,8 +4,9 @@ from typing import List
 from crud import crud_ops
 from schemas import schemas
 from database import get_db
-import datetime
+from datetime import datetime, timezone
 import pytz
+from zoneinfo import ZoneInfo
 
 router = APIRouter()
 
@@ -24,8 +25,8 @@ def read_initial_towns(skip: int = 0, limit: int = 100, db: Session = Depends(ge
 @router.post("/towns/", response_model=schemas.Town)
 def create_town(town: schemas.TownCreate, db: Session = Depends(get_db)):
 
-    local_tz = pytz.timezone('Europe/Helsinki')  # Adjust to your specific timezone
-    now = datetime.datetime.now(local_tz)
+    
+    now = datetime.now(timezone.utc)
     start_of_hour = now.replace(minute=0, second=0, microsecond=0)
 
     db_town = crud_ops.create_town(db, town, start_of_hour)
@@ -49,11 +50,12 @@ def force_update_wine_levels(db: Session = Depends(get_db)):
 @router.put("/towns/{town_id}/", response_model=schemas.Town)
 def update_town(town_id: int, town_update: schemas.TownUpdate, db: Session = Depends(get_db)):
     town_updated, initial_state_updated, updated_town = crud_ops.update_town_and_initial_state(db, town_id, town_update)
-    
+    print(f"town_updated: {town_updated} initial state updated: {initial_state_updated} updated_town: {updated_town}")
     if not updated_town:
         raise HTTPException(status_code=404, detail="Town not found after update")
     
     if town_updated and not initial_state_updated:
+        print("goes to update wine rates")
         crud_ops.update_wine_rates(db, town_id, town_update.wine_storage)
     
     db.refresh(updated_town)  

@@ -1,20 +1,20 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from models import models
 from sqlalchemy.orm import Session
 import pytz
 
 
 def calculate_discrepancy_and_elapsed_hours(initial_state, updated_wine_storage):
-    local_tz = pytz.timezone('Europe/Helsinki')
-    now = datetime.now(local_tz)
-    start_of_last_hour = now.replace(minute=0, second=0, microsecond=0) - timedelta(hours=1)
+    
+    now = datetime.now(timezone.utc)
+    start_of_hour = now.replace(minute=0, second=0, microsecond=0)
 
-    if initial_state.timestamp.tzinfo is None:
-        initial_timestamp = local_tz.localize(initial_state.timestamp)
-    else:
-        initial_timestamp = initial_state.timestamp.astimezone(local_tz)
-
-    elapsed_hours = (start_of_last_hour - initial_timestamp).total_seconds() / 3600.0
+    initial_timestamp = initial_state.timestamp
+        
+    initial_timestamp = initial_timestamp.replace(tzinfo=timezone.utc)
+    
+    print(f"start of last hour: {start_of_hour} initial timestamp: {initial_timestamp}")
+    elapsed_hours = (start_of_hour - initial_timestamp).total_seconds() / 3600.0
     discrepancy = initial_state.initial_wine_storage - updated_wine_storage
 
     return elapsed_hours, discrepancy

@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from models import models
 from schemas import schemas
-import datetime
+from datetime import datetime, timezone, timedelta
 import pytz
 import logging
 from services import town_services as ts
@@ -33,7 +33,7 @@ def get_towns(db: Session):
 def get_towns_initial(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.InitialWineStorage).offset(skip).limit(limit).all()
 
-def create_town(db: Session, town: schemas.TownCreate, start_of_hour: datetime.datetime):
+def create_town(db: Session, town: schemas.TownCreate, start_of_hour: datetime):
     db_town = models.Town(
         **town.model_dump(),
         last_update=start_of_hour
@@ -71,16 +71,15 @@ def delete_town(db: Session, town_id: int):
 
 def update_wine_levels(db: Session):
     towns = db.query(models.Town).all()
-    local_tz = pytz.timezone('Europe/Helsinki')  # Adjust to your specific timezone
-    now = datetime.datetime.now(local_tz)
+    #local_tz = pytz.timezone('Europe/Helsinki')  # Adjust to your specific timezone
+    now = datetime.now(timezone.utc)
+    
     for town in towns:
         # Ensure town.last_update is offset-aware in the same timezone
-        if town.last_update.tzinfo is None:
+        
             # If town.last_update is naive, make it aware using the local timezone
-            town_last_update_aware = local_tz.localize(town.last_update)
-        else:
-            # Otherwise, convert it to the local timezone
-            town_last_update_aware = town.last_update.astimezone(local_tz)
+        town_last_update_aware = town.last_update.replace(tzinfo=timezone.utc)
+        
         elapsed_time = (now - town_last_update_aware).total_seconds() / 3600
 
         # Net wine change calculation
@@ -117,7 +116,7 @@ def transfer_wine_between_towns(db: Session, transfer_request: schemas.TownTrans
 def update_town_and_initial_state(db: Session, town_id: int, town_update: schemas.TownUpdate):
     town_updated = initial_state_updated = False
     current_town, initial_town_state = ts.fetch_town_and_initial_state(db, town_id)
-    update_data = town_update.dict(exclude_unset=True)
+    update_data = town_update.model_dump(exclude_unset=True)
     
     # Update town properties
     for key in ['town_name', 'wine_storage', 'wine_hourly_consumption', 'wine_production']:
@@ -125,9 +124,21 @@ def update_town_and_initial_state(db: Session, town_id: int, town_update: schema
             setattr(current_town, key, update_data[key])
             town_updated = True
 
-    # Update initial state for specific changes
-    if any(key in update_data for key in ['wine_hourly_consumption', 'wine_production']):
-        ts.update_initial_state(initial_town_state, update_data)
+    if 'wine_hourly_consumption' in update_data and update_data['wine_hourly_consumption'] != initial_town_state.initial_wine_hourly_consumption or \
+       'wine_production' in update_data and update_data['wine_production'] != initial_town_state.initial_wine_production:
+        
+        initial_town_state.initial_wine_hourly_consumption = update_data.get('wine_hourly_consumption', initial_town_state.initial_wine_hourly_consumption)
+        initial_town_state.initial_wine_production = update_data.get('wine_production', initial_town_state.initial_wine_production)
+        initial_town_state.initial_wine_storage = update_data.get('wine_storage', initial_town_state.initial_wine_storage)
+        # Optionally, update the timestamp to reflect the latest baseline update
+        
+        now = datetime.now(timezone.utc)
+        start_of_hour = now.replace(minute=0, second=0, microsecond=0)
+        print(f"Initial state time stamp: {start_of_hour}")
+        initial_town_state.timestamp = start_of_hour
+        
+        db.commit()
+        db.refresh(initial_town_state)
         initial_state_updated = True
 
     if town_updated:
@@ -143,11 +154,18 @@ def update_wine_rates(db: Session, town_id: int, updated_wine_storage: float):
         raise ValueError("Town or initial wine storage state not found")
 
     elapsed_hours, discrepancy = ts.calculate_discrepancy_and_elapsed_hours(initial_state, updated_wine_storage)
+    #elapsed_hours += 5
+    print(f"elapsed hours: {elapsed_hours} discrepacncy: {discrepancy}")
     
     if elapsed_hours > 0:
-        new_wine_consumption_rate = discrepancy / elapsed_hours
-        town.wine_hourly_consumption = new_wine_consumption_rate
-        db.commit()
+        if discrepancy >= 0:
+            new_wine_consumption_rate = discrepancy / elapsed_hours
+            town.wine_hourly_consumption = new_wine_consumption_rate
+        else:
+            new_wine_production_rate = abs(discrepancy) / elapsed_hours
+            town.wine_production = new_wine_production_rate
+    
+    db.commit()
 
 
 
