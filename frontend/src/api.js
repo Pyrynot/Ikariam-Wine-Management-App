@@ -1,4 +1,4 @@
-const BACKEND_URL = "http://localhost:8000";
+const BACKEND_URL = "http://localhost:8006";
 
 // Reusable fetch operation
 async function makeFetchRequest(url, options = {}) {

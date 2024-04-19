@@ -5,7 +5,7 @@ services:
     volumes:
       - ./backend:/app
     ports:
-      - "8000:8000"
+      - "8006:8006"
     environment:
       - NAME=WineManagementBackend
 

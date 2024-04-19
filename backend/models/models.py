@@ -33,3 +33,6 @@ class InitialWineStorage(Base):
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
 
     town = relationship("Town", back_populates="initial_storage")
+
+    #delete initialwinestorage, and implement tracking with wine press level and base consumption
+    #implement daily login bonus tracking

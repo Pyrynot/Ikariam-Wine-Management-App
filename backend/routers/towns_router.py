@@ -56,7 +56,7 @@ def update_town(town_id: int, town_update: schemas.TownUpdate, db: Session = Dep
     
     if town_updated and not initial_state_updated:
         print("goes to update wine rates")
-        crud_ops.update_wine_rates(db, town_id, town_update.wine_storage)
+        #crud_ops.update_wine_rates(db, town_id, town_update.wine_storage)
     
     db.refresh(updated_town)  
     return updated_town
